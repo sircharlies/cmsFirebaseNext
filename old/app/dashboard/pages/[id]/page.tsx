@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
@@ -25,12 +25,13 @@ interface PageEditProps {
 }
 
 export default function PageEditPage({ params }: PageEditProps) {
+  const resolvedParams = use(params)
   const [page, setPage] = useState<Page | null>(null)
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     featuredImage: "",
-    active: true,
+    active: false,
     accessible: true,
     isHome: false,
     showTitle: true,
@@ -52,13 +53,13 @@ export default function PageEditPage({ params }: PageEditProps) {
   })
 
   const { updatePage } = usePages()
-  const { layouts, createLayout, updateLayout, deleteLayout, reorderLayouts } = useLayouts(params.id)
+  const { layouts, createLayout, updateLayout, deleteLayout, reorderLayouts } = useLayouts(resolvedParams.id)
   const router = useRouter()
 
   useEffect(() => {
     const fetchPage = async () => {
       try {
-        const pageDoc = await getDoc(doc(db, "pages", params.id))
+        const pageDoc = await getDoc(doc(db, "pages", resolvedParams.id))
         if (pageDoc.exists()) {
           const pageData = {
             id: pageDoc.id,
@@ -88,14 +89,14 @@ export default function PageEditPage({ params }: PageEditProps) {
     }
 
     fetchPage()
-  }, [params.id])
+  }, [resolvedParams.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
 
     try {
-      await updatePage(params.id, formData)
+      await updatePage(resolvedParams.id, formData)
       router.push("/dashboard/pages")
     } catch (error) {
       console.error("Failed to update page:", error)
@@ -105,11 +106,11 @@ export default function PageEditPage({ params }: PageEditProps) {
   }
 
   const handleImageUpload = async (file: File) => {
-    return await uploadPageImage(file, params.id)
+    return await uploadPageImage(file, resolvedParams.id)
   }
 
   const handleLayoutImageUpload = async (file: File, layoutId: string) => {
-    return await uploadLayoutImage(file, params.id, layoutId)
+    return await uploadLayoutImage(file, resolvedParams.id, layoutId)
   }
 
   const handleCreateLayout = async () => {

@@ -13,26 +13,21 @@ export async function revalidatePages(paths?: string[]) {
     const revalidatePaths = paths || ["/"]
 
     for (const path of revalidatePaths) {
-      const body: any = { path }
-
-      // Adicionar secret apenas se estiver configurado
-      if (process.env.REVALIDATE_SECRET) {
-        body.secret = process.env.REVALIDATE_SECRET
-      }
-
       const response = await fetch(`${baseUrl}/api/revalidate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          path,
+          secret: process.env.REVALIDATE_SECRET,
+        }),
       })
 
       if (response.ok) {
         console.log(`✅ Revalidated: ${path}`)
       } else {
-        const error = await response.text()
-        console.error(`❌ Failed to revalidate ${path}:`, error)
+        console.error(`❌ Failed to revalidate: ${path}`)
       }
     }
   } catch (error) {
@@ -44,55 +39,41 @@ export async function revalidatePages(paths?: string[]) {
 export function useRevalidate() {
   const revalidateHome = async () => {
     try {
-      const body: any = { path: "/" }
-
       const response = await fetch("/api/revalidate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          path: "/",
+        }),
       })
 
       if (response.ok) {
-        const result = await response.json()
-        console.log("✅ Home page revalidated:", result.message)
-        return true
-      } else {
-        const error = await response.text()
-        console.error("❌ Failed to revalidate home:", error)
-        return false
+        console.log("✅ Home page revalidated")
       }
     } catch (error) {
       console.error("Error revalidating home:", error)
-      return false
     }
   }
 
   const revalidatePage = async (slug: string) => {
     try {
-      const body: any = { path: `/page/${slug}` }
-
       const response = await fetch("/api/revalidate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          path: `/page/${slug}`,
+        }),
       })
 
       if (response.ok) {
-        const result = await response.json()
-        console.log(`✅ Page /${slug} revalidated:`, result.message)
-        return true
-      } else {
-        const error = await response.text()
-        console.error(`❌ Failed to revalidate page ${slug}:`, error)
-        return false
+        console.log(`✅ Page /${slug} revalidated`)
       }
     } catch (error) {
       console.error(`Error revalidating page ${slug}:`, error)
-      return false
     }
   }
 
