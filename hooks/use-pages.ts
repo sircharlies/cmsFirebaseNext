@@ -13,20 +13,20 @@ import {
   serverTimestamp,
   where,
   getDocs,
+  getDoc,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Page } from "@/types"
 import { generateSlug } from "@/lib/utils"
+import { useRevalidate } from "@/lib/revalidate"
 
 export function usePages() {
   const [pages, setPages] = useState<Page[]>([])
   const [loading, setLoading] = useState(true)
+  const { revalidateHome, revalidatePage } = useRevalidate()
 
   useEffect(() => {
-    const q = query(
-      collection(db, "pages"), 
-      orderBy("order", "asc")
-    )
+    const q = query(collection(db, "pages"), orderBy("order", "asc"))
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const pagesData = snapshot.docs.map((doc) => ({
@@ -57,6 +57,13 @@ export function usePages() {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     })
+
+    // Revalidar páginas após criação
+    if (pageData.isHome) {
+      await revalidateHome()
+    } else {
+      await revalidatePage(slug)
+    }
   }
 
   const updatePage = async (id: string, pageData: Partial<Page>) => {
@@ -73,10 +80,30 @@ export function usePages() {
 
     updateData.updatedAt = serverTimestamp()
     await updateDoc(doc(db, "pages", id), updateData)
+
+    // Revalidar páginas após atualização
+    if (pageData.isHome || updateData.slug) {
+      await revalidateHome()
+      if (updateData.slug) {
+        await revalidatePage(updateData.slug as string)
+      }
+    }
   }
 
   const deletePage = async (id: string) => {
+    // Buscar a página antes de deletar para saber se era home
+    const pageDoc = await getDoc(doc(db, "pages", id))
+    const pageData = pageDoc.data()
+
     await deleteDoc(doc(db, "pages", id))
+
+    // Revalidar se era página home
+    if (pageData?.isHome) {
+      await revalidateHome()
+    }
+    if (pageData?.slug) {
+      await revalidatePage(pageData.slug)
+    }
   }
 
   const reorderPages = async (reorderedPages: Page[]) => {
@@ -111,7 +138,7 @@ export function usePublicPages() {
       collection(db, "pages"),
       where("active", "==", true),
       where("accessible", "==", true),
-      where("isHome", "==", false), 
+      where("isHome", "==", false),
       orderBy("order", "asc"),
     )
 

@@ -1,32 +1,30 @@
-import { notFound } from "next/navigation"
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Page, Layout } from "@/types"
 import { LayoutRenderer } from "@/components/layout-renderer"
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
-import type { Metadata } from "next"
 import Image from "next/image"
-import { cookies } from "next/headers"
+import { notFound } from "next/navigation"
+import type { Metadata } from "next"
 
-interface PageProps {
-  params: Promise<{ slug: string }>
-}
+// Força a página a ser dinâmica
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
-async function getPageBySlug(slug: string, isUserLoggedIn: boolean): Promise<{ page: Page; layouts: Layout[] } | null> {
+async function getPageBySlug(slug: string): Promise<{ page: Page; layouts: Layout[] } | null> {
   try {
-    // Get page by slug - se usuário não estiver logado, só busca páginas ativas
-    const pagesQuery = isUserLoggedIn
-      ? query(collection(db, "pages"), where("slug", "==", slug))
-      : query(collection(db, "pages"), where("slug", "==", slug), where("active", "==", true))
+    const pageQuery = query(
+      collection(db, "pages"),
+      where("slug", "==", slug),
+      where("active", "==", true),
+      where("accessible", "==", true),
+    )
+    const pageSnapshot = await getDocs(pageQuery)
 
-    const pagesSnapshot = await getDocs(pagesQuery)
+    if (pageSnapshot.empty) return null
 
-    if (pagesSnapshot.empty) {
-      return null
-    }
-
-    const pageDoc = pagesSnapshot.docs[0]
+    const pageDoc = pageSnapshot.docs[0]
     const page = {
       id: pageDoc.id,
       ...pageDoc.data(),
@@ -34,12 +32,7 @@ async function getPageBySlug(slug: string, isUserLoggedIn: boolean): Promise<{ p
       updatedAt: pageDoc.data().updatedAt?.toDate() || new Date(),
     } as Page
 
-    // Se a página não está ativa e o usuário não está logado, retorna null
-    if (!page.active && !isUserLoggedIn) {
-      return null
-    }
-
-    // Get layouts for the page - buscar todos os layouts ativos, sem filtro adicional
+    // Buscar layouts da página
     const layoutsQuery = query(
       collection(db, "pages", page.id, "layouts"),
       where("active", "==", true),
@@ -57,37 +50,22 @@ async function getPageBySlug(slug: string, isUserLoggedIn: boolean): Promise<{ p
 
     return { page, layouts }
   } catch (error) {
-    console.error("Erro ao buscar página:", error)
+    console.error("Error fetching page:", error)
     return null
   }
 }
 
-async function checkUserAuth(): Promise<boolean> {
-  try {
-    const cookieStore = await cookies()
-    // Aqui você pode implementar uma lógica mais robusta para verificar se o usuário está logado
-    // Por exemplo, verificar um token JWT ou session cookie
-    // Por simplicidade, vamos assumir que existe um cookie de sessão
-    const authCookie = cookieStore.get("firebase-auth-token")
-    return !!authCookie
-  } catch {
-    return false
-  }
-}
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const pageData = await getPageBySlug(params.slug)
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const resolvedParams = await params
-  const isUserLoggedIn = await checkUserAuth()
-  const data = await getPageBySlug(resolvedParams.slug, isUserLoggedIn)
-
-  if (!data) {
+  if (!pageData) {
     return {
-      title: "Página não encontrada!",
+      title: "Página não encontrada",
+      description: "A página solicitada não foi encontrada.",
     }
   }
 
-  const { page } = data
-
+  const { page } = pageData
   return {
     title: page.name,
     description: page.description,
@@ -106,30 +84,33 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default async function PublicPage({ params }: PageProps) {
-  const resolvedParams = await params
-  const isUserLoggedIn = await checkUserAuth()
-  const data = await getPageBySlug(resolvedParams.slug, isUserLoggedIn)
+export default async function PageBySlug({ params }: { params: { slug: string } }) {
+  const timestamp = new Date().getTime()
+  console.log(`[${timestamp}] Fetching page by slug: ${params.slug}`)
 
-  if (!data) {
+  const pageData = await getPageBySlug(params.slug)
+
+  if (!pageData) {
+    console.log(`[${timestamp}] Page not found: ${params.slug}`)
     notFound()
   }
 
-  const { page, layouts } = data
+  const { page, layouts } = pageData
+  console.log(`[${timestamp}] Page found: ${page.name} with ${layouts.length} layouts`)
 
   return (
     <div className="min-h-screen bg-slate-900">
       <PublicHeader />
 
-      {/* Aviso para páginas inativas (só aparece para usuários logados) */}
-      {!page.active && isUserLoggedIn && (
-        <div className="bg-yellow-600 text-white px-4 py-2 text-center">
-          <p className="text-sm">⚠️ Esta página está inativa e só é visível para administradores</p>
-        </div>
-      )}
-
-      {/* Page Content */}
       <main className="container mx-auto px-4 py-8">
+        {/* Debug info - remover em produção */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 text-xs rounded">
+            Debug: Page ID: {page.id} | Slug: {page.slug} | Layouts: {layouts.length} | Updated:{" "}
+            {page.updatedAt.toString()}
+          </div>
+        )}
+
         {/* Page Header */}
         {(page.showTitle || page.showDescription) && (
           <div className="mb-12 text-center">

@@ -9,6 +9,10 @@ import Link from "next/link"
 import Image from "next/image"
 import type { Metadata } from "next"
 
+// Força a página a ser dinâmica e não usar cache
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 async function getHomePage(): Promise<{ page: Page; layouts: Layout[] } | null> {
   try {
     // Buscar página marcada como home
@@ -24,7 +28,7 @@ async function getHomePage(): Promise<{ page: Page; layouts: Layout[] } | null> 
         updatedAt: pageDoc.data().updatedAt?.toDate() || new Date(),
       } as Page
 
-      // Buscar layouts da página home - removendo o filtro accessible que estava causando problema
+      // Buscar layouts da página home
       const layoutsQuery = query(
         collection(db, "pages", page.id, "layouts"),
         where("active", "==", true),
@@ -80,9 +84,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
+  // Adiciona timestamp para evitar cache
+  const timestamp = new Date().getTime()
+  console.log(`[${timestamp}] Fetching home page data...`)
+
   const homeData = await getHomePage()
 
   if (!homeData) {
+    console.log(`[${timestamp}] No home page found, showing default page`)
     // Página padrão quando não há home customizada
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -172,12 +181,20 @@ export default async function HomePage() {
   }
 
   const { page, layouts } = homeData
+  console.log(`[${timestamp}] Home page found: ${page.name} with ${layouts.length} layouts`)
 
   return (
     <div className="min-h-screen bg-slate-900">
       <PublicHeader />
 
       <main className="container mx-auto px-4 py-8">
+        {/* Debug info - remover em produção */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 text-xs rounded">
+            Debug: Page ID: {page.id} | Layouts: {layouts.length} | Updated: {page.updatedAt.toString()}
+          </div>
+        )}
+
         {/* Page Header */}
         {(page.showTitle || page.showDescription) && (
           <div className="mb-12 text-center">
