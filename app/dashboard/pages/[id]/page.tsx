@@ -31,7 +31,7 @@ export default function PageEditPage({ params }: PageEditProps) {
     name: "",
     description: "",
     featuredImage: "",
-    active: false,
+    active: true,
     accessible: true,
     isHome: false,
     showTitle: true,
