@@ -23,7 +23,7 @@ export class SettingsModel {
       if (!settingsDoc.exists()) {
         // Criar configurações padrão se não existirem
         const defaultSettings: Omit<Settings, "id"> = {
-          siteTitle: "Modern CMS",
+          siteTitle: "CMS Facul",
           siteDescription: "Um sistema de gerenciamento de conteúdo moderno",
           contactEmail: "admin@example.com",
           autoGenerateMetaDescriptions: true,

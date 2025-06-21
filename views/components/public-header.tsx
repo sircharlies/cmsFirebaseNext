@@ -15,7 +15,7 @@ export function PublicHeader() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="text-2xl font-bold text-white hover:text-blue-400 transition-colors">
-            Modern CMS
+            CMS Facul
           </Link>
 
           {/* Desktop Navigation */}

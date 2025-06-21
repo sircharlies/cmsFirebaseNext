@@ -13,10 +13,10 @@ import Image from "next/image"
 interface ImageUploadProps {
   value?: string
   onChange: (url: string) => void
-  onRemove: () => void
+  onUpload?: (file: File) => Promise<string>
 }
 
-export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, onUpload }: ImageUploadProps) {
   const [imageUrl, setImageUrl] = useState("")
   const [isUploading, setIsUploading] = useState(false)
 
@@ -27,15 +27,18 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
     }
   }
 
+  const handleRemove = () => {
+    onChange("")
+  }
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file) return
+    if (!file || !onUpload) return
 
     setIsUploading(true)
     try {
-      // Aqui você pode implementar o upload para Firebase Storage
-      // Por enquanto, vamos simular um erro para mostrar que não está funcionando
-      throw new Error("Upload não configurado - use URL da imagem")
+      const url = await onUpload(file)
+      onChange(url)
     } catch (error) {
       console.error("Erro no upload:", error)
       alert("Erro no upload. Por favor, use a opção de URL da imagem.")
@@ -51,9 +54,20 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
           <div className="relative aspect-video rounded-lg overflow-hidden border">
             <Image src={value || "/placeholder.svg"} alt="Imagem selecionada" fill className="object-cover" />
           </div>
-          <Button type="button" onClick={onRemove} variant="destructive" size="sm" className="absolute top-2 right-2">
+          <Button
+            type="button"
+            onClick={handleRemove}
+            variant="destructive"
+            size="sm"
+            className="absolute top-2 right-2"
+          >
             <X className="h-4 w-4" />
           </Button>
+          <div className="mt-2 text-center">
+            <Button type="button" onClick={handleRemove} variant="outline" size="sm">
+              Remover Imagem
+            </Button>
+          </div>
         </div>
       ) : (
         <Tabs defaultValue="url" className="w-full">
@@ -100,15 +114,17 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={isUploading}
+                  disabled={isUploading || !onUpload}
                   onClick={() => document.getElementById("image-file")?.click()}
                 >
                   {isUploading ? "Enviando..." : "Selecionar Arquivo"}
                 </Button>
               </div>
-              <p className="text-sm text-orange-600">
-                ⚠️ Upload temporariamente indisponível. Use a opção "URL da Imagem".
-              </p>
+              {!onUpload && (
+                <p className="text-sm text-orange-600">
+                  ⚠️ Upload temporariamente indisponível. Use a opção "URL da Imagem".
+                </p>
+              )}
             </div>
           </TabsContent>
         </Tabs>

@@ -5,7 +5,7 @@ export function PublicFooter() {
         <div className="grid md:grid-cols-3 gap-8">
           <div>
             <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
-              Modern CMS
+              CMS Facul
             </h3>
             <p className="text-slate-400 leading-relaxed">
               Sistema de gerenciamento de conteúdo moderno e escalável construído com Next.js e Firebase.
@@ -32,7 +32,7 @@ export function PublicFooter() {
         </div>
         <div className="border-t border-slate-700/50 mt-8 pt-8 text-center">
           <p className="text-slate-400">
-            &copy; {new Date().getFullYear()} Modern CMS. Construído com ❤️ usando Next.js e Firebase.
+            &copy; {new Date().getFullYear()} CMS Facul. Carlos Barreto.
           </p>
         </div>
       </div>

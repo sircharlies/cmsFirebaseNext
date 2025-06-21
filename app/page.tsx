@@ -12,12 +12,7 @@ import type { Metadata } from "next"
 async function getHomePage(): Promise<{ page: Page; layouts: Layout[] } | null> {
   try {
     // Buscar página marcada como home
-    const homeQuery = query(
-      collection(db, "pages"),
-      where("isHome", "==", true),
-      where("active", "==", true),
-      where("accessible", "==", true),
-    )
+    const homeQuery = query(collection(db, "pages"), where("isHome", "==", true), where("active", "==", true))
     const homeSnapshot = await getDocs(homeQuery)
 
     if (!homeSnapshot.empty) {
@@ -29,7 +24,7 @@ async function getHomePage(): Promise<{ page: Page; layouts: Layout[] } | null> 
         updatedAt: pageDoc.data().updatedAt?.toDate() || new Date(),
       } as Page
 
-      // Buscar layouts da página home
+      // Buscar layouts da página home - removendo o filtro accessible que estava causando problema
       const layoutsQuery = query(
         collection(db, "pages", page.id, "layouts"),
         where("active", "==", true),
@@ -79,7 +74,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   return {
-    title: "Modern CMS",
+    title: "CMS Facul",
     description: "Um sistema de gerenciamento de conteúdo poderoso e escalável construído com Next.js e Firebase.",
   }
 }
@@ -95,7 +90,7 @@ export default async function HomePage() {
         <div className="container mx-auto px-4 py-16">
           <div className="text-center space-y-8 max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Modern CMS
+              CMS Facul
             </h1>
             <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
               Um sistema de gerenciamento de conteúdo poderoso e escalável construído com Next.js e Firebase. Crie,

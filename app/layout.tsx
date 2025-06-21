@@ -7,7 +7,7 @@ import { AuthProvider } from "@/contexts/auth-context"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Modern CMS",
+  title: "CMS Facul",
   description: "A modern content management system built with Next.js and Firebase",
     generator: 'v0.dev'
 }

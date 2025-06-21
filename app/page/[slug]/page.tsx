@@ -39,7 +39,7 @@ async function getPageBySlug(slug: string, isUserLoggedIn: boolean): Promise<{ p
       return null
     }
 
-    // Get layouts for the page
+    // Get layouts for the page - buscar todos os layouts ativos, sem filtro adicional
     const layoutsQuery = query(
       collection(db, "pages", page.id, "layouts"),
       where("active", "==", true),

@@ -112,3 +112,5 @@
   --tw-prose-th-borders: rgb(51 65 85);
   --tw-prose-td-borders: rgb(30 41 59);
 }
+
+img{max-width: 100%;}
