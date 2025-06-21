@@ -12,7 +12,12 @@ import type { Metadata } from "next"
 async function getHomePage(): Promise<{ page: Page; layouts: Layout[] } | null> {
   try {
     // Buscar página marcada como home
-    const homeQuery = query(collection(db, "pages"), where("isHome", "==", true), where("active", "==", true))
+    const homeQuery = query(
+      collection(db, "pages"),
+      where("isHome", "==", true),
+      where("active", "==", true),
+      where("accessible", "==", true),
+    )
     const homeSnapshot = await getDocs(homeQuery)
 
     if (!homeSnapshot.empty) {
